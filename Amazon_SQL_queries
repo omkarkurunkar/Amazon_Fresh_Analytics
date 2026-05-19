@@ -1,0 +1,204 @@
+# Identify the primary keys and foreign keys for each table
+
+#primary keys
+
+ALTER TABLE Customers
+ADD CONSTRAINT pk_customer PRIMARY KEY (CustomerID);
+
+#inner join of both tables
+select* from order_details
+inner join orders
+on order_details.OrderID=orders.OrderID;
+
+select* from products;
+ALTER TABLE Products
+ADD CONSTRAINT pk_product PRIMARY KEY (ProductID);
+
+select* from reviews;
+ALTER TABLE reviews
+ADD CONSTRAINT pk_reviews PRIMARY KEY (reviewid);
+
+select* from suppliers;
+ALTER TABLE suppliers
+ADD CONSTRAINT pk_supplier PRIMARY KEY (supplierid);
+
+#foreign keys
+
+ALTER TABLE Order_Details
+ADD CONSTRAINT FK_ProductID
+FOREIGN KEY (ProductID) references Products(ProductID);
+
+  
+
+ALTER TABLE Customers MODIFY CustomerID VARCHAR(50);
+ALTER TABLE Orders MODIFY CustomerID VARCHAR(50);
+
+ALTER TABLE Orders
+ADD CONSTRAINT FK_Customers
+FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID);
+
+ALTER TABLE Products MODIFY SupplierID VARCHAR(50);
+ALTER TABLE Suppliers MODIFY SupplierID VARCHAR(50);
+
+ALTER TABLE Products
+ADD CONSTRAINT FK_Suppliers
+FOREIGN KEY (SupplierID)
+REFERENCES Suppliers(SupplierID);   
+
+ALTER TABLE Reviews
+ADD CONSTRAINT fk_product
+FOREIGN KEY (ProductID)
+REFERENCES Products(ProductID);
+
+# Task-2 -Retrieve all customers from a specific city
+SELECT *
+FROM Customers
+WHERE City = 'meganfort';
+
+#Fetch all products under the "Fruits" category
+SELECT *
+FROM categories
+WHERE Category = 'Fruits';
+
+#Task 5: Insert 3 new rows into the Products table using INSERT statements
+INSERT INTO products (productid,productName,category,subcategory,priceperunit,stockquantity,supplierid)
+VALUES 
+    (8544656564,'Laptop', 'Electronics','sub-ele',5000,220,656546545864),
+    (45135465465,'Office Chair','Furniture','sub-furni',4000,230,28454515),
+    (658454515511,'Water Bottle','Accessories','sub-acces',500,80,215616516);
+
+
+
+#Task 6: Update the stock quantity of a product where ProductID matches a specific ID.
+UPDATE products
+SET StockQuantity = 800  # you can assign only one value not double
+WHERE ProductID = '0628599d-2f51-46a8-ab5e-7e54a383ca44';
+
+
+#Task 7: Delete a supplier from the Suppliers table where their city matches a specific value.
+ delete from Suppliers where City = 'Donaldstad';
+
+
+#Task 8: Use SQL constraints to: Add a CHECK constraint to ensure that ratings in the Reviews table are between 1 and 5
+ALTER TABLE Reviews
+ADD CONSTRAINT chk_rating_range
+CHECK (rating BETWEEN 1 AND 5); 
+
+
+#Add a DEFAULT constraint for the PrimeMember column in the Customers table (default value: "No")
+ALTER TABLE Customers 
+MODIFY PrimeMember VARCHAR(10) DEFAULT 'No';
+
+
+#Task 9: WHERE clause to find orders placed after 2024-01-01
+SELECT *
+FROM Orders
+WHERE orderdate = '2025-01-01';
+#HAVING clause to list products with average ratings greater than 4
+SELECT 
+    productid,
+    AVG(rating) AS avg_rating
+FROM reviews
+group by ProductID
+HAVING AVG(rating) > 4;
+
+#GROUP BY and ORDER BY clauses to rank products by total sales
+SELECT
+    p.ProductID,
+    p.ProductName,
+    SUM((od.UnitPrice * od.Quantity) - od.Discount) AS TotalSales
+FROM products p
+JOIN order_details od
+    ON p.ProductID = od.ProductID
+GROUP BY
+    p.ProductID,
+    p.ProductName
+ORDER BY TotalSales DESC;
+
+
+#Task 10: Identifying High-Value Customers : Calculate each customer's total spending
+SELECT 
+    CustomerID,
+    SUM(OrderAmount + DeliveryFee - DiscountApplied) AS TotalSpending
+FROM Orders
+GROUP BY CustomerID;
+
+#Rank customers based on their spending
+SELECT 
+    CustomerID,
+    SUM(OrderAmount) AS TotalSpending
+FROM Orders
+GROUP BY CustomerID
+ORDER BY TotalSpending DESC;
+
+#Identify customers who have spent more than ₹5,000
+SELECT 
+    CustomerID,
+    SUM(OrderAmount + DeliveryFee - DiscountApplied) AS TotalSpending
+FROM Orders
+GROUP BY CustomerID
+HAVING TotalSpending > 5000;
+
+
+# Task 11 : Join the Orders and OrderDetails tables to calculate total revenue per order
+SELECT 
+    o.OrderID,
+    SUM(od.Quantity * od.UnitPrice * (1 - od.Discount / 100.0)) AS TotalRevenue
+FROM orders o
+JOIN order_details od
+    ON o.OrderID = od.OrderID
+GROUP BY o.OrderID;
+
+# Identify customers who placed the most orders in a specific time period
+SELECT CustomerID,COUNT(*) AS TotalOrders
+FROM orders WHERE OrderDate BETWEEN '2025-01-01' AND '2025-10-31’
+GROUP BY  CustomerID ORDER BY TotalOrders DESC;
+
+
+# Task 12 : Identify the top 3 products based on sales revenue
+SELECT
+    ProductID,
+    ProductName,
+    TotalRevenue
+FROM (
+    SELECT
+        p.ProductID,
+        p.ProductName,
+        SUM((o.Quantity * o.UnitPrice) - o.Discount) AS TotalRevenue
+    FROM Products p
+    JOIN Order_Details o
+        ON p.ProductID = o.ProductID
+    GROUP BY p.ProductID, p.ProductName
+)  AS RevenueSubquery
+ORDER BY TotalRevenue DESC
+LIMIT 3;                 
+
+
+# Task 13 : Find customers who haven’t placed any orders yet
+SELECT 
+    c.CustomerID,
+    c.Name,
+    c.PrimeMember,
+    o.OrderID,
+    o.OrderAmount
+FROM Customers c
+LEFT JOIN Orders o ON c.CustomerID = o.CustomerID
+WHERE o.OrderID IS NULL; 
+
+
+# Task 14 : top 3 most frequently ordered categories
+SELECT 
+    p.Categoryid,
+    SUM(od.Quantity) AS Total_Quantity_Ordered
+FROM Order_Details od
+JOIN Products p
+    ON od.ProductID = p.ProductID
+GROUP BY p.Categoryid
+ORDER BY Total_Quantity_Ordered DESC
+LIMIT 3; 
+
+
+
+
+
+
